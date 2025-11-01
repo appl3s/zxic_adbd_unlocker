@@ -21,7 +21,8 @@ var (
 const (
 	defaultIP       = "192.168.100.1"
 	defaultBytesCnt = 128
-	targetFile      = "/mnt/userdata/adbd"
+	targetPath      = "/mnt/userdata"
+	targetFile      = targetPath + "/adbd"
 )
 
 type Executer struct {
@@ -41,7 +42,7 @@ func (e *Executer) runCmd(cmd string) {
 }
 
 func (e *Executer) Remount() {
-	e.runCmd("mount -o remount,rw " + targetFile)
+	e.runCmd("mount -o remount,rw " + targetPath)
 	e.runCmd("cp /bin/busybox " + targetFile)
 }
 
