@@ -54,6 +54,7 @@ func (e *Executer) Push() {
 		if i%defaultBytesCnt == 0 {
 			e.runCmd(fmt.Sprintf("printf '%s'>>"+targetFile, builder.String()))
 			builder = &strings.Builder{}
+			log.Printf("%%%.2f\n", float32(i)*float32(100.0)/float32(len(adbdBytes)))
 		}
 		if i == len(adbdBytes)-1 {
 			e.runCmd(fmt.Sprintf("printf '%s'>>"+targetFile, builder.String()))
