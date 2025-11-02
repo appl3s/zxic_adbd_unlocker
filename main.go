@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -89,7 +90,7 @@ func (e *Executer) Push() {
 func (e *Executer) Enable() {
 	e.runCmd("chmod 777 " + targetFile)
 	//e.runCmd("/bin/sh -c " + targetFile + " &")
-	e.runAT1("shell="+targetFile)
+	e.runAT1("shell=" + targetFile)
 }
 
 func start(ip string, onlyStart bool) {
@@ -101,13 +102,40 @@ func start(ip string, onlyStart bool) {
 	go e.Enable()
 }
 
+func switchCard(ip string, Id int) {
+	e := Executer{ip}
+	e.runAT1("CFUN=5")
+	time.Sleep(time.Second)
+	switch Id {
+	case 1:
+		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
+		e.runAT1("ZCARDSWITCH=0,0")
+	case 2:
+		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
+		e.runAT1("ZCARDSWITCH=3,0")
+	case 3:
+		e.runCmd("echo 1 > /sys/class/gpio/gpio127/value")
+		e.runAT1("ZCARDSWITCH=3,0")
+	default:
+		e.runAT1("ZCARDSWITCH=0,0")
+		log.Fatal("unsupport id:", Id)
+	}
+	e.runAT1("CFUN=0")
+	time.Sleep(3 * time.Second)
+	e.runAT1("CFUN=1")
+
+}
+
 func main() {
 	var (
-		ip        string
-		onlystart bool
+		ip           string
+		onlystart    bool
+		switchCardId int
 	)
 	flag.StringVar(&ip, "ip", defaultIP, "后台地址")
 	flag.BoolVar(&onlystart, "s", false, "只启动adbd服务而不推送")
+	flag.IntVar(&switchCardId, "switch", -1, "切换sim卡")
+
 	flag.Parse()
 	if ip == "" {
 		flag.Usage()
@@ -116,7 +144,12 @@ func main() {
 
 	log.Printf("使用地址：http://%s，按任意键继续", ip)
 	bufio.NewReader(os.Stdin).ReadString('\n')
-	start(ip, onlystart)
+	if switchCardId != -1 {
+		switchCard(ip, switchCardId)
+	} else {
+		start(ip, onlystart)
+	}
+
 	log.Println("执行结束，按任意键退出")
 	bufio.NewReader(os.Stdin).ReadString('\n')
 }
