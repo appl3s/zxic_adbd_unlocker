@@ -72,6 +72,7 @@ func (e *Executer) Remount() {
 }
 
 func (e *Executer) Push() {
+	log.Println("[+] Start push adbd...")
 	e.runCmd("printf '' >" + targetFile)
 	builder := &strings.Builder{}
 	for i := range adbdBytes {
@@ -87,7 +88,21 @@ func (e *Executer) Push() {
 	}
 }
 
+func (e *Executer) DevMode() {
+	log.Println("[+] Set dev mode")
+	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=SET_DEVICE_MODE&debug_enable=1", e.IP))
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(string(bodyBytes))
+}
+
 func (e *Executer) Enable() {
+	e.DevMode()
 	e.runCmd("chmod 777 " + targetFile)
 	//e.runCmd("/bin/sh -c " + targetFile + " &")
 	e.runAT1("shell=" + targetFile)
