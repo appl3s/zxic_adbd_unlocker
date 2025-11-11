@@ -142,19 +142,26 @@ func switchCard(ip string, Id int) {
 	switch Id {
 	case 1:
 		e.setConfigAndSave("alk_sim_current", "1")
+		e.setConfigAndSave("alk_sim_select", "1")
 		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=0,0")
 		// e.setConfig("wan_apn", "")
 	case 2:
 		e.setConfig("alk_sim_current", "2")
+		e.setConfigAndSave("alk_sim_select", "2")
+
 		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=3,0")
 	case 3:
 		e.setConfig("alk_sim_current", "3")
+		e.setConfigAndSave("alk_sim_select", "3")
+
 		e.runCmd("echo 1 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=3,0")
 	default:
 		e.setConfig("alk_sim_current", "1")
+		e.setConfigAndSave("alk_sim_select", "1")
+
 		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=0,0")
 		log.Println("unsupport id:", Id)
