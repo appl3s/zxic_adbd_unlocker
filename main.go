@@ -31,6 +31,7 @@ type Executer struct {
 }
 
 func (e *Executer) runCmd(cmd string) {
+	log.Println("runCMD:", cmd)
 	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=ALK_EXC_SYSTEM_CMD&SYS_CMD=%s", e.IP, url.QueryEscape(cmd)))
 	if err != nil {
 		log.Fatal(err)
@@ -42,7 +43,21 @@ func (e *Executer) runCmd(cmd string) {
 	log.Println(string(bodyBytes))
 }
 
+func (e *Executer) setConfig(key, value string) {
+	e.runCmd(fmt.Sprintf("nv set %s=%s", key, value))
+}
+
+func (e *Executer) setConfigAndSave(key, value string) {
+	e.setConfig(key, value)
+	e.saveConfig()
+}
+
+func (e *Executer) saveConfig() {
+	e.runCmd("nv save")
+}
+
 func (e *Executer) runAT1(cmd string) {
+	log.Println("run AT:",cmd)
 	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=ALK_EXC_AT_CMD1&AT_CMD1=%s", e.IP, url.QueryEscape(cmd)))
 	if err != nil {
 		log.Fatal(err)
@@ -106,8 +121,8 @@ func (e *Executer) DevMode(mode int) {
 func (e *Executer) Enable() {
 	e.DevMode(1)
 	e.runCmd("chmod 777 " + targetFile)
-	//e.runCmd("/bin/sh -c " + targetFile + " &")
-	e.runAT1("shell=" + targetFile)
+	e.runCmd("/bin/sh -c " + targetFile + " &")
+	//e.runAT1("shell=" + targetFile)
 }
 
 func start(ip string, onlyStart bool) {
@@ -121,26 +136,36 @@ func start(ip string, onlyStart bool) {
 
 func switchCard(ip string, Id int) {
 	e := Executer{ip}
+	e.setConfigAndSave("slot_in", "0")
 	e.runAT1("CFUN=5")
 	time.Sleep(time.Second)
 	switch Id {
 	case 1:
+		e.setConfigAndSave("alk_sim_current", "1")
 		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=0,0")
+		// e.setConfig("wan_apn", "")
 	case 2:
+		e.setConfig("alk_sim_current", "2")
 		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=3,0")
 	case 3:
+		e.setConfig("alk_sim_current", "3")
 		e.runCmd("echo 1 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=3,0")
 	default:
+		e.setConfig("alk_sim_current", "1")
+		e.runCmd("echo 0 > /sys/class/gpio/gpio127/value")
 		e.runAT1("ZCARDSWITCH=0,0")
-		log.Fatal("unsupport id:", Id)
+		log.Println("unsupport id:", Id)
 	}
+	e.saveConfig()
+	e.setConfigAndSave("alk_sim_flag","0")
+	e.setConfigAndSave("mmi_close_freq","1")
 	e.runAT1("CFUN=0")
 	time.Sleep(3 * time.Second)
 	e.runAT1("CFUN=1")
-
+	e.setConfig("switch_card_complete", "1")
 }
 
 func main() {
