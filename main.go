@@ -75,6 +75,8 @@ func (e *Executer) Push() {
 	log.Println("[+] Start push adbd...")
 	e.runCmd("printf '' >" + targetFile)
 	builder := &strings.Builder{}
+	// 如果下发策略被ban，执行下面逻辑
+	// e.runCmd(`sleep 20; ifconfig usblan0 up;`)
 	for i := range adbdBytes {
 		fmt.Fprintf(builder, "\\x%02x", adbdBytes[i])
 		if i%defaultBytesCnt == 0 {
@@ -88,9 +90,9 @@ func (e *Executer) Push() {
 	}
 }
 
-func (e *Executer) DevMode() {
+func (e *Executer) DevMode(mode int) {
 	log.Println("[+] Set dev mode")
-	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=SET_DEVICE_MODE&debug_enable=1", e.IP))
+	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=SET_DEVICE_MODE&debug_enable=%d", e.IP, mode))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -102,7 +104,7 @@ func (e *Executer) DevMode() {
 }
 
 func (e *Executer) Enable() {
-	e.DevMode()
+	e.DevMode(1)
 	e.runCmd("chmod 777 " + targetFile)
 	//e.runCmd("/bin/sh -c " + targetFile + " &")
 	e.runAT1("shell=" + targetFile)
