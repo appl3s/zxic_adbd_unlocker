@@ -57,7 +57,7 @@ func (e *Executer) saveConfig() {
 }
 
 func (e *Executer) runAT1(cmd string) {
-	log.Println("run AT:",cmd)
+	log.Println("run AT:", cmd)
 	resp, err := http.Get(fmt.Sprintf("http://%s/reqproc/proc_post?goformId=ALK_EXC_AT_CMD1&AT_CMD1=%s", e.IP, url.QueryEscape(cmd)))
 	if err != nil {
 		log.Fatal(err)
@@ -118,6 +118,10 @@ func (e *Executer) DevMode(mode int) {
 	log.Println(string(bodyBytes))
 }
 
+func (e *Executer) ModIMEI(imei string) {
+	e.runAT1(fmt.Sprintf("MODIMEI=%s", imei))
+}
+
 func (e *Executer) Enable() {
 	e.DevMode(1)
 	e.runCmd("chmod 777 " + targetFile)
@@ -167,8 +171,8 @@ func switchCard(ip string, Id int) {
 		log.Println("unsupport id:", Id)
 	}
 	e.saveConfig()
-	e.setConfigAndSave("alk_sim_flag","0")
-	e.setConfigAndSave("mmi_close_freq","1")
+	e.setConfigAndSave("alk_sim_flag", "0")
+	e.setConfigAndSave("mmi_close_freq", "1")
 	e.runAT1("CFUN=0")
 	time.Sleep(3 * time.Second)
 	e.runAT1("CFUN=1")
@@ -180,10 +184,12 @@ func main() {
 		ip           string
 		onlystart    bool
 		switchCardId int
+		imei         string
 	)
 	flag.StringVar(&ip, "ip", defaultIP, "后台地址")
 	flag.BoolVar(&onlystart, "s", false, "只启动adbd服务而不推送")
 	flag.IntVar(&switchCardId, "switch", -1, "切换sim卡")
+	flag.StringVar(&imei, "imei", "", "修改imei")
 
 	flag.Parse()
 	if ip == "" {
@@ -193,7 +199,12 @@ func main() {
 
 	log.Printf("使用地址：http://%s，按任意键继续", ip)
 	bufio.NewReader(os.Stdin).ReadString('\n')
-	if switchCardId != -1 {
+
+	imei = strings.TrimSpace(imei)
+	if imei != "" {
+		e := Executer{ip}
+		e.ModIMEI(imei)
+	} else if switchCardId != -1 {
 		switchCard(ip, switchCardId)
 	} else {
 		start(ip, onlystart)
